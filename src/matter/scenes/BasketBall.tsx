@@ -1,7 +1,18 @@
-import Matter from "matter-js";
+import {
+  Engine,
+  Render,
+  Runner,
+  Bodies,
+  World,
+  Mouse,
+  Events,
+  Body,
+  MouseConstraint,
+  Constraint,
+} from "matter-js";
 import { useRef, useEffect, useState } from "react";
 
-export function Demo() {
+export function BasketBall() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -10,7 +21,6 @@ export function Demo() {
 
   const [engine, setEngine] = useState<Matter.Engine | null>(null);
   const [score, setScore] = useState(0); // Score counter
-
 
   useEffect(() => {
     function handleResize() {
@@ -26,12 +36,6 @@ export function Demo() {
 
   useEffect(() => {
     if (containerRef.current) {
-      const Engine = Matter.Engine,
-        Render = Matter.Render,
-        Runner = Matter.Runner,
-        Bodies = Matter.Bodies,
-        World = Matter.World;
-
       const engine = Engine.create();
 
       setEngine(engine);
@@ -93,14 +97,14 @@ export function Demo() {
         restitution: 0.8,
         friction: 0.005,
         density: 0.04,
-        label: 'ball', // Add this label to the ball
+        label: "ball", // Add this label to the ball
         render: {
           fillStyle: "orange",
           sprite: {
             texture: "/120px-Basketball.png", // Add path to your image
             xScale: 1, // Adjust these values
-            yScale: 1  // Adjust these values
-          }
+            yScale: 1, // Adjust these values
+          },
         },
       });
 
@@ -110,10 +114,9 @@ export function Demo() {
         windowSize.height - 225,
         40,
         1800,
-        { isStatic: true
-         }
-        
+        { isStatic: true }
       );
+
       const hoop = Bodies.rectangle(
         windowSize.width - 365,
         windowSize.height - 800,
@@ -121,8 +124,8 @@ export function Demo() {
         35,
         {
           isStatic: true,
-          isSensor: true, // Allow the ball to pass through
-          label: 'hoop',
+          isSensor: true,
+          label: "hoop",
           render: {
             strokeStyle: "white",
             fillStyle: "transparent",
@@ -131,15 +134,15 @@ export function Demo() {
         }
       );
 
-      const hoopConstrant = Bodies.rectangle(
-        windowSize.width - 510,
-        windowSize.height - 800,
+      const hoopConstrantLeft = Bodies.rectangle(
+        windowSize.width - 500,
+        windowSize.height - 780,
         5,
         35,
         {
           isStatic: true,
-         
-          label: 'hoop',
+
+          label: "hoop",
           render: {
             strokeStyle: "transparent",
             fillStyle: "transparent",
@@ -148,8 +151,79 @@ export function Demo() {
         }
       );
 
-      const mouse = Matter.Mouse.create(render.canvas);
-      const mouseConstraint = Matter.MouseConstraint.create(engine, {
+      const hoopConstrantRight = Bodies.rectangle(
+        windowSize.width - 225,
+        windowSize.height - 780,
+        5,
+        35,
+        {
+          isStatic: true,
+
+          label: "hoop",
+          render: {
+            strokeStyle: "transparent",
+            fillStyle: "transparent",
+            lineWidth: 5,
+          },
+        }
+      );
+
+      const yOffset = 30;
+      const numSegments = 10;
+      const segmentHeight = 10;
+      const segmentWidth = 10;
+
+      const netBodies = [];
+      const netConstraints = [];
+      let alternate = 1;
+      for (let i = 0; i < numSegments; i++) {
+        const yPos = windowSize.height - 800 + yOffset + i * segmentHeight;
+        const xPos = windowSize.width - 365 + alternate * segmentWidth;
+
+        const netBody = Bodies.circle(xPos, yPos, 5, {
+          isStatic: false,
+          render: { fillStyle: "red" },
+        });
+        netBodies.push(netBody);
+
+        if (i > 0) {
+          const constraint = Constraint.create({
+            bodyA: netBodies[i],
+            bodyB: netBodies[i - 1],
+            length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
+            stiffness: 0.5,
+            render: { strokeStyle: "blue", lineWidth: 3 },
+          });
+
+          netConstraints.push(constraint);
+        }
+        alternate = -alternate;
+      }
+
+      // Attach the first net body to the hoop
+      const firstNetConstraint = Constraint.create({
+        bodyA: hoopConstrantLeft,
+        bodyB: netBodies[0],
+        length: 0,
+        stiffness: 0.5,
+        render: { strokeStyle: "blue", lineWidth: 3 },
+      });
+
+      const secondNetConstraint = Constraint.create({
+        bodyA: netBodies[numSegments - 1],
+        bodyB: hoopConstrantRight,
+        length: 0,
+        stiffness: 0.5,
+        render: { strokeStyle: "blue", lineWidth: 3 },
+      });
+
+      netConstraints.push(firstNetConstraint, secondNetConstraint);
+
+      // Add the net bodies and constraints to the world
+      World.add(engine.world, [...netBodies, ...netConstraints]);
+
+      const mouse = Mouse.create(render.canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
         mouse: mouse,
         constraint: {
           stiffness: 0.2,
@@ -159,7 +233,7 @@ export function Demo() {
 
       let previousMousePosition = { x: 0, y: 0 };
 
-      Matter.Events.on(mouseConstraint, "mousemove", function (event) {
+      Events.on(mouseConstraint, "mousemove", function (event) {
         // Check if the mouse is holding the ball
         if (mouseConstraint.body === ball) {
           const mouse = event.source.mouse.position as Matter.Vector;
@@ -170,13 +244,13 @@ export function Demo() {
           const forceMagnitude = 0.005;
 
           // Apply force to the ball
-          Matter.Body.applyForce(ball, ball.position, {
+          Body.applyForce(ball, ball.position, {
             x: dx * forceMagnitude,
             y: dy * forceMagnitude,
           });
 
           // Apply torque for spinning (difference between previous and current mouse y-position)
-          Matter.Body.setAngularVelocity(
+          Body.setAngularVelocity(
             ball,
             (mouse.y - previousMousePosition.y) * 0.002
           );
@@ -187,12 +261,10 @@ export function Demo() {
         const velocity = ball.velocity;
         const newVelocity = {
           x: Math.sign(velocity.x) * Math.min(Math.abs(velocity.x), maxSpeed),
-          y: Math.sign(velocity.y) * Math.min(Math.abs(velocity.y), maxSpeed)
+          y: Math.sign(velocity.y) * Math.min(Math.abs(velocity.y), maxSpeed),
         };
-        Matter.Body.setVelocity(ball, newVelocity);
+        Body.setVelocity(ball, newVelocity);
       });
-
-
 
       World.add(engine.world, [
         ground,
@@ -202,7 +274,8 @@ export function Demo() {
         ball,
         hoopPole,
         hoop,
-        hoopConstrant,
+        hoopConstrantLeft,
+        hoopConstrantRight,
         mouseConstraint,
       ]);
 
@@ -220,31 +293,34 @@ export function Demo() {
     }
   }, [containerRef, windowSize]);
 
-  
   const addBall = () => {
     if (engine) {
-      const newBall = Matter.Bodies.circle(100, 100, 35, {
+      const newBall = Bodies.circle(100, 100, 35, {
         restitution: 0.8,
         friction: 0.005,
         density: 0.04,
-        label: 'ball', // Add this label to the ball
+        label: "ball", // Add this label to the ball
         render: {
           fillStyle: "orange",
           sprite: {
             texture: "/120px-Basketball.png", // Add path to your image
             xScale: 1, // Adjust these values
-            yScale: 1  // Adjust these values
-          }
+            yScale: 1, // Adjust these values
+          },
         },
       });
-      Matter.World.add(engine.world, [newBall]);
+      World.add(engine.world, [newBall]);
     }
   };
 
-  const ballPassedThroughHoop = (event: Matter.IEventCollision<Matter.Engine>) => {
+  const ballPassedThroughHoop = (
+    event: Matter.IEventCollision<Matter.Engine>
+  ) => {
     event.pairs.forEach((pair) => {
-      if ((pair.bodyA.label === 'hoop' && pair.bodyB.label.startsWith('ball')) ||
-          (pair.bodyB.label === 'hoop' && pair.bodyA.label.startsWith('ball'))) {
+      if (
+        (pair.bodyA.label === "hoop" && pair.bodyB.label.startsWith("ball")) ||
+        (pair.bodyB.label === "hoop" && pair.bodyA.label.startsWith("ball"))
+      ) {
         setScore(score + 1);
       }
     });
@@ -252,36 +328,34 @@ export function Demo() {
 
   useEffect(() => {
     if (engine) {
-      Matter.Events.on(engine, 'collisionStart', ballPassedThroughHoop);
+      Events.on(engine, "collisionStart", ballPassedThroughHoop);
     }
     return () => {
       if (engine) {
-        Matter.Events.off(engine, 'collisionStart', ballPassedThroughHoop);
+        Events.off(engine, "collisionStart", ballPassedThroughHoop);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [engine, score]);
 
-
   return (
     <div>
-      <div style={{ position: 'absolute', zIndex: 2, top: 10, left: 50 }}>
-      <button onClick={addBall}>Add Ball</button>
-      <div>Score: {score}</div> {/* Display the score */}
-    </div>
+      <div style={{ position: "absolute", zIndex: 2, top: 10, left: 50 }}>
+        <button onClick={addBall}>Add Ball</button>
+        <div>Score: {score}</div> {/* Display the score */}
+      </div>
       <div
         ref={containerRef}
         id="matter-container"
         style={{
-          position: 'absolute',
+          position: "absolute",
           zIndex: 1,
           top: 0,
           left: 0,
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "100%",
         }}
       />
-    
     </div>
   );
 }

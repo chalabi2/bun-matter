@@ -2,8 +2,8 @@ import React from "react";
 
 import "./App.css";
 
-import { Demo } from "./demo";
+import { BasketBall } from "./matter/scenes/BasketBall";
 
-const App: React.FC = () => <Demo />;
+const App: React.FC = () => <BasketBall />;
 
 export default App;
