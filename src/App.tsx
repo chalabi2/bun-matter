@@ -1,8 +1,9 @@
 import React from "react";
 
 import "./App.css";
-import { CatapultDemo } from "./catapult";
 
-const App: React.FC = () => <CatapultDemo />;
+import { Demo } from "./demo";
+
+const App: React.FC = () => <Demo />;
 
 export default App;

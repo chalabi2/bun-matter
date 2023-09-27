@@ -8,6 +8,10 @@ export function Demo() {
     height: window.innerHeight,
   });
 
+  const [engine, setEngine] = useState<Matter.Engine | null>(null);
+  const [score, setScore] = useState(0); // Score counter
+
+
   useEffect(() => {
     function handleResize() {
       setWindowSize({ width: window.innerWidth, height: window.innerHeight });
@@ -30,6 +34,8 @@ export function Demo() {
 
       const engine = Engine.create();
 
+      setEngine(engine);
+
       const render = Render.create({
         element: containerRef.current,
         engine: engine,
@@ -45,7 +51,7 @@ export function Demo() {
         windowSize.width / 2,
         windowSize.height,
         windowSize.width,
-        20,
+        50,
         {
           density: 1,
           isStatic: true,
@@ -54,7 +60,7 @@ export function Demo() {
       const leftWall = Bodies.rectangle(
         0,
         windowSize.height / 2,
-        20,
+        50,
         windowSize.height,
         {
           density: 1,
@@ -64,7 +70,7 @@ export function Demo() {
       const rightWall = Bodies.rectangle(
         windowSize.width,
         windowSize.height / 2,
-        20,
+        50,
         windowSize.height,
         {
           density: 1,
@@ -73,9 +79,9 @@ export function Demo() {
       );
       const ceiling = Bodies.rectangle(
         windowSize.width / 2,
-        0,
+        -500,
         windowSize.width,
-        20,
+        50,
         {
           density: 1,
           isStatic: true,
@@ -83,36 +89,59 @@ export function Demo() {
       );
 
       // Creating a bouncy ball
-      const ball = Bodies.circle(100, 100, 20, {
-        restitution: 0.8, // makes the ball bouncy
-        friction: 0.005, // adjusts friction to prevent it from breaking through walls
-        density: 0.04, // adjusts density
-        render: { fillStyle: "orange" },
+      const ball = Bodies.circle(100, 100, 35, {
+        restitution: 0.8,
+        friction: 0.005,
+        density: 0.04,
+        label: 'ball', // Add this label to the ball
+        render: {
+          fillStyle: "orange",
+          sprite: {
+            texture: "/120px-Basketball.png", // Add path to your image
+            xScale: 1, // Adjust these values
+            yScale: 1  // Adjust these values
+          }
+        },
       });
 
       // Creating a large basketball hoop with backboard
       const hoopPole = Bodies.rectangle(
-        windowSize.width - 100,
-        windowSize.height - 300,
-        20,
-        400,
-        { isStatic: true }
-      );
-      const backboard = Bodies.rectangle(
         windowSize.width - 200,
-        windowSize.height - 500,
-        200,
-        20,
-        { isStatic: true }
+        windowSize.height - 225,
+        40,
+        1800,
+        { isStatic: true
+         }
+        
       );
-      const hoop = Bodies.circle(
-        windowSize.width - 250,
-        windowSize.height - 500,
-        50,
+      const hoop = Bodies.rectangle(
+        windowSize.width - 365,
+        windowSize.height - 800,
+        275,
+        35,
         {
           isStatic: true,
+          isSensor: true, // Allow the ball to pass through
+          label: 'hoop',
           render: {
             strokeStyle: "white",
+            fillStyle: "transparent",
+            lineWidth: 5,
+          },
+        }
+      );
+
+      const hoopConstrant = Bodies.rectangle(
+        windowSize.width - 510,
+        windowSize.height - 800,
+        5,
+        35,
+        {
+          isStatic: true,
+         
+          label: 'hoop',
+          render: {
+            strokeStyle: "transparent",
             fillStyle: "transparent",
             lineWidth: 5,
           },
@@ -154,7 +183,16 @@ export function Demo() {
         }
 
         previousMousePosition = event.source.mouse.position as Matter.Vector;
+        const maxSpeed = 50;
+        const velocity = ball.velocity;
+        const newVelocity = {
+          x: Math.sign(velocity.x) * Math.min(Math.abs(velocity.x), maxSpeed),
+          y: Math.sign(velocity.y) * Math.min(Math.abs(velocity.y), maxSpeed)
+        };
+        Matter.Body.setVelocity(ball, newVelocity);
       });
+
+
 
       World.add(engine.world, [
         ground,
@@ -163,8 +201,8 @@ export function Demo() {
         ceiling,
         ball,
         hoopPole,
-        backboard,
         hoop,
+        hoopConstrant,
         mouseConstraint,
       ]);
 
@@ -182,17 +220,68 @@ export function Demo() {
     }
   }, [containerRef, windowSize]);
 
+  
+  const addBall = () => {
+    if (engine) {
+      const newBall = Matter.Bodies.circle(100, 100, 35, {
+        restitution: 0.8,
+        friction: 0.005,
+        density: 0.04,
+        label: 'ball', // Add this label to the ball
+        render: {
+          fillStyle: "orange",
+          sprite: {
+            texture: "/120px-Basketball.png", // Add path to your image
+            xScale: 1, // Adjust these values
+            yScale: 1  // Adjust these values
+          }
+        },
+      });
+      Matter.World.add(engine.world, [newBall]);
+    }
+  };
+
+  const ballPassedThroughHoop = (event: Matter.IEventCollision<Matter.Engine>) => {
+    event.pairs.forEach((pair) => {
+      if ((pair.bodyA.label === 'hoop' && pair.bodyB.label.startsWith('ball')) ||
+          (pair.bodyB.label === 'hoop' && pair.bodyA.label.startsWith('ball'))) {
+        setScore(score + 1);
+      }
+    });
+  };
+
+  useEffect(() => {
+    if (engine) {
+      Matter.Events.on(engine, 'collisionStart', ballPassedThroughHoop);
+    }
+    return () => {
+      if (engine) {
+        Matter.Events.off(engine, 'collisionStart', ballPassedThroughHoop);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [engine, score]);
+
+
   return (
-    <div
-      ref={containerRef}
-      id="matter-container"
-      style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-      }}
-    />
+    <div>
+      <div style={{ position: 'absolute', zIndex: 2, top: 10, left: 50 }}>
+      <button onClick={addBall}>Add Ball</button>
+      <div>Score: {score}</div> {/* Display the score */}
+    </div>
+      <div
+        ref={containerRef}
+        id="matter-container"
+        style={{
+          position: 'absolute',
+          zIndex: 1,
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+        }}
+      />
+    
+    </div>
   );
 }
