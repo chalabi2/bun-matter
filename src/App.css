@@ -27,6 +27,11 @@
   }
 }
 
+.matter-container {
+  background: url('/audience.jpg') no-repeat center center fixed;
+  background-size: cover;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
