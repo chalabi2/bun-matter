@@ -4,10 +4,8 @@ import {
   Runner,
   Bodies,
   World,
-  Mouse,
   Events,
   Body,
-  MouseConstraint,
   Constraint,
 } from "matter-js";
 import { useRef, useEffect, useState } from "react";
@@ -44,13 +42,10 @@ export function BasketBall() {
         element: containerRef.current,
         engine: engine,
         options: {
-          showAngleIndicator: true,
-          showCollisions: true,
-          showVelocity: true,
           wireframes: false,
           width: windowSize.width,
           height: windowSize.height,
-          background: "transparent",
+          background: "/audience.png",
         },
       });
 
@@ -63,13 +58,12 @@ export function BasketBall() {
           collisionFilter: {
             category: 0x0001,
           },
-          
+
           render: {
             sprite: {
               texture: "/court.jpg", // Add path to your image
               xScale: 1, // Adjust these values
               yScale: 0.1, // Adjust these values
-             
             },
           },
           density: 1,
@@ -80,10 +74,13 @@ export function BasketBall() {
         0,
         windowSize.height / 2,
         50,
-        windowSize.height,
+        windowSize.height + 800,
         {
           collisionFilter: {
             category: 0x0001,
+          },
+          render: {
+            fillStyle: "transparent",
           },
           density: 1,
           isStatic: true,
@@ -91,9 +88,9 @@ export function BasketBall() {
       );
       const rightWall = Bodies.rectangle(
         windowSize.width,
-        windowSize.height / 2,
+        windowSize.height / 4,
         50,
-        windowSize.height,
+        windowSize.height + 1200,
         {
           collisionFilter: {
             category: 0x0001,
@@ -104,7 +101,7 @@ export function BasketBall() {
       );
       const ceiling = Bodies.rectangle(
         windowSize.width / 2,
-        0,
+        -800,
         windowSize.width,
         50,
         {
@@ -135,22 +132,9 @@ export function BasketBall() {
         },
       });
 
-      // Creating a large basketball hoop with backboard
-      const hoopPole = Bodies.rectangle(
-        windowSize.width ,
-        windowSize.height - 225,
-        40,
-        1800,
-        { 
-          collisionFilter: {
-            category: 0x0001,
-          },
-          isStatic: true }
-      );
-
       const hoop = Bodies.rectangle(
-        windowSize.width - 365,
-        windowSize.height - 800,
+        windowSize.width - 170,
+        windowSize.height - 600,
         275,
         35,
         {
@@ -166,8 +150,8 @@ export function BasketBall() {
       );
 
       const hoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 500,
-        windowSize.height - 780,
+        windowSize.width - 305,
+        windowSize.height - 580,
         5,
         35,
         {
@@ -183,8 +167,8 @@ export function BasketBall() {
       );
 
       const secondHoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 490,
-        windowSize.height - 720,
+        windowSize.width - 295,
+        windowSize.height - 520,
         5,
         35,
         {
@@ -200,8 +184,8 @@ export function BasketBall() {
       );
 
       const hoopConstrantRight = Bodies.rectangle(
-        windowSize.width - 230,
-        windowSize.height - 780,
+        windowSize.width - 33,
+        windowSize.height - 580,
         5,
         35,
         {
@@ -217,8 +201,8 @@ export function BasketBall() {
       );
 
       const secondHoopConstraintRight = Bodies.rectangle(
-        windowSize.width - 235,
-        windowSize.height - 720,
+        windowSize.width - 38,
+        windowSize.height - 520,
         5,
         35,
         {
@@ -234,8 +218,8 @@ export function BasketBall() {
       );
 
       const thirdHoopConstraintRight = Bodies.rectangle(
-        windowSize.width - 275,
-        windowSize.height - 640,
+        windowSize.width - 78,
+        windowSize.height - 440,
         5,
         35,
         {
@@ -251,8 +235,8 @@ export function BasketBall() {
       );
 
       const thirdHoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 450,
-        windowSize.height - 640,
+        windowSize.width - 255,
+        windowSize.height - 440,
         5,
         35,
         {
@@ -290,7 +274,7 @@ export function BasketBall() {
             bodyA: netBodies[i],
             bodyB: netBodies[i - 1],
             length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-            stiffness: 0.5,
+            stiffness: 0.1,
             render: { strokeStyle: "white", lineWidth: 1 },
           });
 
@@ -299,13 +283,12 @@ export function BasketBall() {
         alternate = -alternate;
       }
 
-
       // Attach the first net body to the hoop
       const firstNetConstraint = Constraint.create({
         bodyA: hoopConstrantLeft,
         bodyB: netBodies[0],
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -313,10 +296,9 @@ export function BasketBall() {
         bodyA: netBodies[numSegments - 1],
         bodyB: secondHoopConstraintRight,
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
-      
 
       netConstraints.push(firstNetConstraint, secondNetConstraint);
 
@@ -338,7 +320,7 @@ export function BasketBall() {
             bodyA: netBodies2[i],
             bodyB: netBodies2[i - 1],
             length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-            stiffness: 0.5,
+            stiffness: 0.1,
             render: { strokeStyle: "white", lineWidth: 1 },
           });
 
@@ -347,12 +329,11 @@ export function BasketBall() {
         alternate2 = -alternate2;
       }
 
-
       const first2NetConstraint = Constraint.create({
         bodyA: hoopConstrantRight,
         bodyB: netBodies2[0],
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -360,10 +341,9 @@ export function BasketBall() {
         bodyA: netBodies2[numSegments - 1],
         bodyB: secondHoopConstrantLeft,
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
-      
 
       netConstraints2.push(first2NetConstraint, second2NetConstraint);
 
@@ -385,7 +365,7 @@ export function BasketBall() {
             bodyA: netBodies3[i],
             bodyB: netBodies3[i - 1],
             length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-            stiffness: 0.5,
+            stiffness: 0.1,
             render: { strokeStyle: "white", lineWidth: 1 },
           });
 
@@ -394,13 +374,12 @@ export function BasketBall() {
         alternate3 = -alternate3;
       }
 
-
       // Attach the first net body to the hoop
       const thirdNetConstraint = Constraint.create({
         bodyA: secondHoopConstrantLeft,
         bodyB: netBodies3[0],
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -408,10 +387,9 @@ export function BasketBall() {
         bodyA: netBodies3[numSegments - 1],
         bodyB: thirdHoopConstraintRight,
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
-      
 
       netConstraints3.push(thirdNetConstraint, fourthNetConstraint);
 
@@ -433,10 +411,9 @@ export function BasketBall() {
             bodyA: netBodies4[i],
             bodyB: netBodies4[i - 1],
             length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-            stiffness: 0.5,
+            stiffness: 0.1,
             render: { strokeStyle: "white", lineWidth: 1 },
           });
-
 
           netConstraints4.push(constraint4);
         }
@@ -444,7 +421,9 @@ export function BasketBall() {
       }
 
       const netBodies5 = [];
+      const netBodies6 = [];
       const netConstraints5 = [];
+      const netConstraints6 = [];
       let alternate5 = 1;
       for (let i = 0; i < numSegments; i++) {
         const yPos = windowSize.height - 800 + yOffset + i * segmentHeight;
@@ -455,18 +434,19 @@ export function BasketBall() {
           render: { fillStyle: "grey" },
         });
         netBodies5.push(netBody5);
+        netBodies6.push(netBody5);
 
         if (i > 0) {
           const constraint5 = Constraint.create({
             bodyA: netBodies5[i],
             bodyB: netBodies5[i - 1],
             length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-            stiffness: 0.3,
+            stiffness: 0.1,
             render: { strokeStyle: "white", lineWidth: 1 },
           });
 
-
           netConstraints5.push(constraint5);
+          netConstraints6.push(constraint5);
         }
         alternate5 = -alternate5;
       }
@@ -477,7 +457,7 @@ export function BasketBall() {
         bodyA: hoopConstrantLeft,
         bodyB: secondHoopConstrantLeft,
         length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -485,7 +465,7 @@ export function BasketBall() {
         bodyA: hoopConstrantRight,
         bodyB: secondHoopConstraintRight,
         length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -493,7 +473,7 @@ export function BasketBall() {
         bodyA: secondHoopConstrantLeft,
         bodyB: thirdHoopConstrantLeft,
         length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -501,20 +481,23 @@ export function BasketBall() {
         bodyA: secondHoopConstraintRight,
         bodyB: thirdHoopConstraintRight,
         length: Math.sqrt(segmentHeight ** 2 + segmentWidth ** 2),
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
-      netConstraints.push(constraintBetween1, constraintBetween2, constraintBetween4, constraintBetween5);
-
-      
+      netConstraints.push(
+        constraintBetween1,
+        constraintBetween2,
+        constraintBetween4,
+        constraintBetween5
+      );
 
       // Attach the first net body to the hoop
       const fifthNetConstraint = Constraint.create({
         bodyA: secondHoopConstraintRight,
         bodyB: netBodies4[0],
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -522,10 +505,9 @@ export function BasketBall() {
         bodyA: netBodies4[numSegments - 1],
         bodyB: thirdHoopConstrantLeft,
         length: 0,
-        stiffness: 0.5,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
-      
 
       netConstraints4.push(fifthNetConstraint, sixthNetConstraint);
 
@@ -533,7 +515,7 @@ export function BasketBall() {
         bodyA: thirdHoopConstrantLeft,
         bodyB: netBodies5[0],
         length: 0,
-        stiffness: 0.3,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
@@ -541,75 +523,113 @@ export function BasketBall() {
         bodyA: netBodies5[numSegments - 1],
         bodyB: thirdHoopConstraintRight,
         length: 0,
-        stiffness: 0.3,
+        stiffness: 0.1,
         render: { strokeStyle: "white", lineWidth: 1 },
       });
 
       netConstraints5.push(seventhNetConstraint, eigthNetConstraint);
 
-      
       // Add the net bodies and constraints to the world
       World.add(engine.world, [...netBodies2, ...netConstraints2]);
       World.add(engine.world, [...netBodies3, ...netConstraints3]);
       World.add(engine.world, [...netBodies4, ...netConstraints4]);
       World.add(engine.world, [...netBodies5, ...netConstraints5]);
       World.add(engine.world, [...netBodies, ...netConstraints]);
-      const mouse = Mouse.create(render.canvas);
-      const mouseConstraint = MouseConstraint.create(engine, {
-        mouse: mouse,
-        constraint: {
-          stiffness: 0.2,
-          render: { visible: true },
-        },
+
+      // Add these variables for the keyboard-based launching system
+      let isCharging = false;
+      let startChargeTime = 0; // Changed from const to let
+      let meterValue = 0;
+
+      document.addEventListener("keydown", (e) => {
+        e.preventDefault();
+        if (e.code === "Space") {
+          const x_start = ball.position.x;
+          const y_start = ball.position.y;
+          const x = hoop.position.x;
+          const y = hoop.position.y;
+
+          const horizontalVelocity = x - x_start;
+          const verticalVelocity =
+            ((y - y_start) / -0.4) * engine.world.gravity.y;
+
+          const perfectForceX = horizontalVelocity / ball.mass;
+          const perfectForceY = verticalVelocity / ball.mass;
+
+          console.log(
+            `Perfect Force X: ${perfectForceX}, Perfect Force Y: ${perfectForceY}`
+          );
+          console.log(`Meter Value: ${meterValue}`);
+
+          if (!isCharging) {
+            isCharging = true;
+            startChargeTime = Date.now();
+          } else {
+            let forceMagnitudeX = perfectForceX;
+            let forceMagnitudeY = perfectForceY;
+            const powerMultiplier = 40; // You may need to adjust this value based on your requirements
+
+            if (meterValue >= 95 && meterValue <= 100) {
+              // Apply multiplier
+              forceMagnitudeX = perfectForceX * powerMultiplier;
+              forceMagnitudeY = perfectForceY * powerMultiplier;
+            } else if (meterValue >= 66 && meterValue < 95) {
+              forceMagnitudeX *= 0.6 * powerMultiplier;
+              forceMagnitudeY *= 0.6 * powerMultiplier;
+            } else {
+              forceMagnitudeX *= 0.3 * powerMultiplier;
+              forceMagnitudeY *= 0.3 * powerMultiplier;
+            }
+
+            Body.applyForce(ball, ball.position, {
+              x: forceMagnitudeX / 1.5,
+              y: -forceMagnitudeY * 1.09,
+            });
+
+            console.log(
+              `Applied Force X: ${forceMagnitudeX}, Applied Force Y: ${-forceMagnitudeY}`
+            );
+            isCharging = false;
+          }
+        }
       });
 
-      let previousMousePosition = { x: 0, y: 0 };
+      Events.on(render, "afterRender", () => {
+        if (isCharging) {
+          const ctx = render.context;
+          const currentTime = Date.now();
+          const chargeDuration = currentTime - startChargeTime;
 
-      Events.on(mouseConstraint, "mousemove", function (event) {
-        // Check if the mouse is holding the ball
-        if (mouseConstraint.body === ball) {
-          const mouse = event.source.mouse.position as Matter.Vector;
+          // Calculate the meter value (between 0 and 100)
+          meterValue = Math.sin(chargeDuration * 0.005) * 100 + 100;
 
-          // Calculate the vector between the mouse and the ball
-          const dx = mouse.x - ball.position.x;
-          const dy = mouse.y - ball.position.y;
-          const forceMagnitude = 0.005;
+          // Create a linear gradient
+          const grd = ctx.createLinearGradient(
+            render.canvas.width - 100,
+            700,
+            render.canvas.width - 90,
+            700 + 200 // Extend the height to 200
+          );
+          grd.addColorStop(0, "green"); // Start color
+          grd.addColorStop(0.5, "yellow"); // Middle color
+          grd.addColorStop(1, "red"); // End color
 
-          // Apply force to the ball
-          Body.applyForce(ball, ball.position, {
-            x: dx * forceMagnitude,
-            y: dy * forceMagnitude,
-          });
+          // Use the gradient as the fillStyle
+          ctx.fillStyle = grd;
 
-          // Apply torque for spinning (difference between previous and current mouse y-position)
-          Body.setAngularVelocity(
-            ball,
-            (mouse.y - previousMousePosition.y) * 0.002
+          // Draw the meter rectangle. Extend the height to 200
+          ctx.fillRect(render.canvas.width - 100, 700, 10, 200);
+
+          // Draw the moving slider
+          ctx.fillStyle = "white";
+          ctx.fillRect(
+            render.canvas.width - 105,
+            700 + (200 - meterValue),
+            20,
+            5
           );
         }
-
-        previousMousePosition = event.source.mouse.position as Matter.Vector;
-        const maxSpeed = 32;
-        const velocity = ball.velocity;
-        const newVelocity = {
-          x: Math.sign(velocity.x) * Math.min(Math.abs(velocity.x), maxSpeed),
-          y: Math.sign(velocity.y) * Math.min(Math.abs(velocity.y), maxSpeed),
-        };
-        Body.setVelocity(ball, newVelocity);
       });
-
-       const speed = Math.sqrt(Math.pow(ball.velocity.x, 2) + Math.pow(ball.velocity.y, 2));
-  
-  // Update the div
-  const speedDisplay = document.getElementById('speedDisplay');
-
-  if (speedDisplay) {
-    // Only update the inner text if the element exists
-    speedDisplay.innerText = `Speed: ${speed.toFixed(2)}`;
-  }
-  if (speedDisplay) {
-    speedDisplay.innerText = `Speed: ${speed.toFixed(2)}`;
-  }
 
       World.add(engine.world, [
         ground,
@@ -617,7 +637,6 @@ export function BasketBall() {
         rightWall,
         ceiling,
         ball,
-        hoopPole,
         hoop,
         hoopConstrantLeft,
         hoopConstrantRight,
@@ -625,16 +644,11 @@ export function BasketBall() {
         secondHoopConstrantLeft,
         thirdHoopConstraintRight,
         thirdHoopConstrantLeft,
-        mouseConstraint,
       ]);
-
-      render.mouse = mouse;
 
       Render.run(render);
       const runner = Runner.create();
       Runner.run(runner, engine);
-
-      
 
       return () => {
         Render.stop(render);
@@ -694,7 +708,6 @@ export function BasketBall() {
       <div style={{ position: "absolute", zIndex: 2, top: 10, left: 50 }}>
         <button onClick={addBall}>Add Ball</button>
         <div>Score: {score}</div> {/* Display the score */}
-        <div id="speedDisplay">Speed: 0</div>
       </div>
       <div
         ref={containerRef}
