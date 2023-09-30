@@ -32,6 +32,8 @@ export function BasketBall() {
     };
   }, []);
 
+  let shotPosition: { x: number | null; y: number | null } | null = null;
+
   useEffect(() => {
     if (containerRef.current) {
       const engine = Engine.create();
@@ -71,10 +73,10 @@ export function BasketBall() {
         }
       );
       const leftWall = Bodies.rectangle(
-        0,
-        windowSize.height / 2,
+        0,  // x-position (left edge of the canvas)
+        windowSize.height / 2,  // y-position (center of the canvas height)
         50,
-        windowSize.height + 800,
+        windowSize.height * 8,
         {
           collisionFilter: {
             category: 0x0001,
@@ -87,10 +89,10 @@ export function BasketBall() {
         }
       );
       const rightWall = Bodies.rectangle(
-        windowSize.width,
-        windowSize.height / 4,
-        50,
-        windowSize.height + 1200,
+        windowSize.width,  // x-position (right edge of the canvas)
+    windowSize.height / 2,  // y-position (center of the canvas height)
+    50,  
+        windowSize.height * 8,
         {
           collisionFilter: {
             category: 0x0001,
@@ -99,19 +101,7 @@ export function BasketBall() {
           isStatic: true,
         }
       );
-      const ceiling = Bodies.rectangle(
-        windowSize.width / 2,
-        -800,
-        windowSize.width,
-        50,
-        {
-          collisionFilter: {
-            category: 0x0001,
-          },
-          density: 1,
-          isStatic: true,
-        }
-      );
+    
 
       // Creating a bouncy ball
       const ball = Bodies.circle(110, 110, 53, {
@@ -135,7 +125,7 @@ export function BasketBall() {
       const hoop = Bodies.rectangle(
         windowSize.width - 170,
         windowSize.height - 600,
-        275,
+        225,
         35,
         {
           isStatic: true,
@@ -149,8 +139,24 @@ export function BasketBall() {
         }
       );
 
+      const minShoot = Bodies.rectangle(
+        windowSize.width,
+        windowSize.height - 600,
+        windowSize.width * 2,
+        2,
+        {
+          isStatic: true,
+          isSensor: true,
+          render: {
+            strokeStyle: "rgba(0,0,0,0.25",
+            fillStyle: "dotted",
+            lineWidth: 5,
+          },
+        }
+      );
+
       const hoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 305,
+        windowSize.width - 305 + 25,
         windowSize.height - 580,
         5,
         35,
@@ -167,7 +173,7 @@ export function BasketBall() {
       );
 
       const secondHoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 295,
+        windowSize.width - 295 + 25,
         windowSize.height - 520,
         5,
         35,
@@ -184,7 +190,7 @@ export function BasketBall() {
       );
 
       const hoopConstrantRight = Bodies.rectangle(
-        windowSize.width - 33,
+        windowSize.width - 33 - 25,
         windowSize.height - 580,
         5,
         35,
@@ -201,7 +207,7 @@ export function BasketBall() {
       );
 
       const secondHoopConstraintRight = Bodies.rectangle(
-        windowSize.width - 38,
+        windowSize.width - 38 - 25,
         windowSize.height - 520,
         5,
         35,
@@ -218,7 +224,7 @@ export function BasketBall() {
       );
 
       const thirdHoopConstraintRight = Bodies.rectangle(
-        windowSize.width - 78,
+        windowSize.width - 78 - 20,
         windowSize.height - 440,
         5,
         35,
@@ -235,7 +241,7 @@ export function BasketBall() {
       );
 
       const thirdHoopConstrantLeft = Bodies.rectangle(
-        windowSize.width - 255,
+        windowSize.width - 255 + 20,
         windowSize.height - 440,
         5,
         35,
@@ -536,106 +542,169 @@ export function BasketBall() {
       World.add(engine.world, [...netBodies5, ...netConstraints5]);
       World.add(engine.world, [...netBodies, ...netConstraints]);
 
-      // Add these variables for the keyboard-based launching system
-      let isCharging = false;
-      let startChargeTime = 0; // Changed from const to let
-      let meterValue = 0;
 
-      document.addEventListener("keydown", (e) => {
-        e.preventDefault();
-        if (e.code === "Space") {
-          const x_start = ball.position.x;
-          const y_start = ball.position.y;
-          const x = hoop.position.x;
-          const y = hoop.position.y;
+      let isOnGround = true;
+let jumpForce = 4;  // Initial jump force
+const maxJumpForce = 26;  // Maximum jump force
+const forceIncrement = 2.5;  // Increment amount
 
-          const horizontalVelocity = x - x_start;
-          const verticalVelocity =
-            ((y - y_start) / -0.4) * engine.world.gravity.y;
+document.addEventListener("keydown", (e) => {
+  e.preventDefault();
+  if (e.code === "Space" && isOnGround) {  // Check if the ball is on the ground
+    // Apply the current jump force
+    Body.applyForce(ball, ball.position, {
+      x: 0,
+      y: -jumpForce,
+    });
+    isOnGround = false;  // Set isOnGround to false as the ball is now in the air
+  }
+});
 
-          const perfectForceX = horizontalVelocity / ball.mass;
-          const perfectForceY = verticalVelocity / ball.mass;
+// Detecting when the ball hits the ground or other objects
+Events.on(engine, 'collisionStart', (event) => {
+  const pairs = event.pairs;
+  for (let i = 0; i < pairs.length; i++) {
+    const pair = pairs[i];
+    if (pair.bodyA === ball || pair.bodyB === ball) {
+      // The ball has hit the ground or another object
+      isOnGround = true;
 
-          console.log(
-            `Perfect Force X: ${perfectForceX}, Perfect Force Y: ${perfectForceY}`
-          );
-          console.log(`Meter Value: ${meterValue}`);
+      // Increase the jump force for the next jump, up to the maximum
+      if (jumpForce < maxJumpForce) {
+        jumpForce += forceIncrement;
+      } else {
+        // Reset the jump force once the maximum is reached
+        jumpForce = 1;
+      }
+    }
+  }
+});
 
-          if (!isCharging) {
-            isCharging = true;
-            startChargeTime = Date.now();
-          } else {
-            let forceMagnitudeX = perfectForceX;
-            let forceMagnitudeY = perfectForceY;
-            const powerMultiplier = 40; // You may need to adjust this value based on your requirements
+Events.on(engine, 'collisionEnd', (event) => {
+  const pairs = event.pairs;
+  for (let i = 0; i < pairs.length; i++) {
+    const pair = pairs[i];
+    if (pair.bodyA === ball || pair.bodyB === ball) {
+      // This line is optional, as isOnGround is already set to false in the keydown event
+      // isOnGround = false;  
+    }
+  }
+});
 
-            if (meterValue >= 95 && meterValue <= 100) {
-              // Apply multiplier
-              forceMagnitudeX = perfectForceX * powerMultiplier;
-              forceMagnitudeY = perfectForceY * powerMultiplier;
-            } else if (meterValue >= 66 && meterValue < 95) {
-              forceMagnitudeX *= 0.6 * powerMultiplier;
-              forceMagnitudeY *= 0.6 * powerMultiplier;
-            } else {
-              forceMagnitudeX *= 0.3 * powerMultiplier;
-              forceMagnitudeY *= 0.3 * powerMultiplier;
-            }
+Events.on(render, 'afterRender', () => {
+  if (isOnGround) {
+    const context = render.context;
+    const radius = ball.circleRadius ? ball.circleRadius + 10 : 10;  // Add a null check to ball.circleRadius
+    context.beginPath();
+    context.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
+    context.strokeStyle = '#AAFF00';
+    context.lineWidth = 5;  // Adjust to change the thickness of the loop
+    context.stroke();
+  }
+});
 
-            Body.applyForce(ball, ball.position, {
-              x: forceMagnitudeX / 1.5,
-              y: -forceMagnitudeY * 1.09,
-            });
+Events.on(render, 'afterRender', () => {
+  if (!isOnGround) {
+    const context = render.context;
+    const radius = ball.circleRadius ? ball.circleRadius + 10 : 10;  // Add a null check to ball.circleRadius
+    context.beginPath();
+    context.arc(ball.position.x, ball.position.y, radius, 0, Math.PI * 2);
+    context.strokeStyle = 'red';
+    context.lineWidth = 5;  // Adjust to change the thickness of the loop
+    context.stroke();
+  }
+});
 
-            console.log(
-              `Applied Force X: ${forceMagnitudeX}, Applied Force Y: ${-forceMagnitudeY}`
-            );
-            isCharging = false;
+      const maxSpeed = 10;  // Set your desired maximum speed
+
+      document.addEventListener("mousemove", (e) => {
+          const mouseX = e.clientX;
+          const ballX = ball.position.x;
+          const forceMagnitudeX = (mouseX - ballX) * 0.001;  // Adjust the multiplier to control the sensitivity
+          const canvasCenter = render.canvas.width / 2;
+        
+          // Stop mouse control if mouseX is greater than halfway across the page
+          if (mouseX > canvasCenter) return;
+          
+          Body.applyForce(ball, ball.position, {
+              x: forceMagnitudeX,
+              y: 0,
+          });
+      
+          // Get the current velocity of the ball
+          const velocity = ball.velocity;
+      
+          // If the velocity exceeds the max speed, clamp it
+          if (Math.abs(velocity.x) > maxSpeed) {
+              const newVelocityX = velocity.x > 0 ? maxSpeed : -maxSpeed;
+              Body.setVelocity(ball, { x: newVelocityX, y: velocity.y });
           }
-        }
       });
+     
 
-      Events.on(render, "afterRender", () => {
-        if (isCharging) {
-          const ctx = render.context;
-          const currentTime = Date.now();
-          const chargeDuration = currentTime - startChargeTime;
+      let hasShot = false;  // Flag to check if the ball has been shot
 
-          // Calculate the meter value (between 0 and 100)
-          meterValue = Math.sin(chargeDuration * 0.005) * 100 + 100;
+      const calculateShot = (ballYPosition: number, ballXPosition: number) => {
+        const hoopHeight = windowSize.height - 600;  // Setting the hoop's height
+        const hoopX = windowSize.width - 170;  // Setting the hoop's x-position
+        const minY = hoopHeight;  // Minimum height for shooting is the height of the hoop
+        const maxY = render.canvas.height;  // Maximum height (assumed to be ground level)
+        const preferredY = hoopHeight - (hoopHeight / 2);  // Preferred height for the best shot is above the hoop
+        
+        // Calculate the horizontal distance to the hoop
+        const distanceToHoop = Math.abs(hoopX - ballXPosition);
+        
+        // Normalize the ball's y-position to a value between 0 and 1
+        const normalizedY = (maxY - ballYPosition) / (maxY - minY);
+        const preferredYFactor = Math.abs(ballYPosition - preferredY) / (maxY - minY);
+        
+        // Interpolate the force and angle based on the normalized y-position, the preferredYFactor, and the distance to the hoop
+        const minForce = 10;  // Minimum force
+        const maxForce = 20 + distanceToHoop * 0.02;  // Increase maxForce based on distance to hoop
+        const force = minForce + (maxForce - minForce) * (1 - preferredYFactor);  // More force for closer to preferredY
+        
+        const minAngle = Math.PI / 8;  // Minimum angle
+        const maxAngle = Math.PI / 4;  // Maximum angle
+        const angle = minAngle + (maxAngle - minAngle) * normalizedY;  // Angle based on height
+        console.log('force:', force, 'angle:', angle, 'forceX:');
+        return { force, angle };
+    };
+    const hoopHeight = windowSize.height - 600;  // Setting the hoop's height
+        // Setting the hoop's x-position
+        const minY = hoopHeight;
 
-          // Create a linear gradient
-          const grd = ctx.createLinearGradient(
-            render.canvas.width - 100,
-            700,
-            render.canvas.width - 90,
-            700 + 200 // Extend the height to 200
-          );
-          grd.addColorStop(0, "green"); // Start color
-          grd.addColorStop(0.5, "yellow"); // Middle color
-          grd.addColorStop(1, "red"); // End color
-
-          // Use the gradient as the fillStyle
-          ctx.fillStyle = grd;
-
-          // Draw the meter rectangle. Extend the height to 200
-          ctx.fillRect(render.canvas.width - 100, 700, 10, 200);
-
-          // Draw the moving slider
-          ctx.fillStyle = "white";
-          ctx.fillRect(
-            render.canvas.width - 105,
-            700 + (200 - meterValue),
-            20,
-            5
-          );
+    document.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        // Check if the ball's height is within the specified range and if the ball hasn't been shot yet
+        if (ball.position.y <= minY && !hasShot) {
+          shotPosition = { ...ball.position }; 
+            // Calculate the force and angle based on the ball's current height and x-position
+            const { force, angle } = calculateShot(ball.position.y, ball.position.x);
+      
+            // Apply the calculated force and angle to the ball
+            const forceX = force * Math.cos(angle);
+            const forceY = -force * Math.sin(angle);
+            Body.applyForce(ball, ball.position, { x: forceX, y: forceY });
+            
+            hasShot = true;  // Set hasShot to true as the ball has been shot
         }
+    });
+    
+      
+      // Reset hasShot to false when the ball hits the ground or other objects
+      Events.on(engine, 'collisionStart', (event) => {
+          const pairs = event.pairs;
+          for (let i = 0; i < pairs.length; i++) {
+              const pair = pairs[i];
+              if (pair.bodyA === ball || pair.bodyB === ball) {
+                  hasShot = false;  // Reset hasShot flag when the ball hits the ground or other objects
+              }
+          }
       });
-
       World.add(engine.world, [
         ground,
         leftWall,
         rightWall,
-        ceiling,
         ball,
         hoop,
         hoopConstrantLeft,
@@ -643,6 +712,7 @@ export function BasketBall() {
         secondHoopConstraintRight,
         secondHoopConstrantLeft,
         thirdHoopConstraintRight,
+        minShoot,
         thirdHoopConstrantLeft,
       ]);
 
@@ -678,18 +748,42 @@ export function BasketBall() {
     }
   };
 
-  const ballPassedThroughHoop = (
-    event: Matter.IEventCollision<Matter.Engine>
-  ) => {
+  
+  const hoop = Bodies.rectangle(
+    windowSize.width - 170,
+    windowSize.height - 600,
+    225,
+    35,
+    {
+      isStatic: true,
+      isSensor: true,
+      label: "hoop",
+      render: {
+        strokeStyle: "red",
+        fillStyle: "transparent",
+        lineWidth: 5,
+      },
+    }
+  );
+
+  const calculateScore = (distance: number, height: number) => {
+    return distance + height;
+};
+
+  const ballPassedThroughHoop = (event: Matter.IEventCollision<Matter.Engine>) => {
     event.pairs.forEach((pair) => {
       if (
         (pair.bodyA.label === "hoop" && pair.bodyB.label.startsWith("ball")) ||
         (pair.bodyB.label === "hoop" && pair.bodyA.label.startsWith("ball"))
       ) {
-        setScore(score + 1);
+        const hoopPosition = hoop.position; // Assuming hoop is accessible in this scope
+        const distance = shotPosition?.x && hoopPosition ? Math.abs(hoopPosition.x - shotPosition.x) : 0;
+        const height = Math.abs(hoopPosition.y - (shotPosition?.y ?? 0));
+        const shotScore = calculateScore(distance, height);
+        setScore(score + shotScore);
       }
     });
-  };
+};
 
   useEffect(() => {
     if (engine) {
